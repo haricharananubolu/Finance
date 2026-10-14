@@ -11,6 +11,7 @@ env = os.environ.get('FLASK_ENV', 'development')
 app = create_app(env)
 
 if __name__ == '__main__':
-    # Default host 127.0.0.1, port 5000 with interactive debugger enabled
     port = int(os.environ.get('PORT', 5000))
-    app.run(host='127.0.0.1', port=port, debug=True)
+    host = os.environ.get('HOST', '0.0.0.0')
+    debug = os.environ.get('FLASK_DEBUG', '1') == '1'
+    app.run(host=host, port=port, debug=debug)
