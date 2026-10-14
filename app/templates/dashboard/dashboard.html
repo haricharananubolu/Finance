@@ -1,0 +1,260 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- Dashboard Header with Month Selector -->
+<div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 24px;">
+  <div>
+    <h2 style="font-size: 20px; font-weight: 800; color: var(--text-main);">Financial Overview</h2>
+    <p style="color: var(--text-muted); font-size: 13px;">Displaying statistics for <strong>{{ month_name }} {{ selected_year }}</strong></p>
+  </div>
+
+  <!-- Month & Year Selector Form -->
+  <form method="GET" action="{{ url_for('dashboard.index') }}" style="display: flex; align-items: center; gap: 8px;">
+    <select name="month" class="form-control" style="width: auto; padding: 7px 12px; font-size: 13px;" onchange="this.form.submit()">
+      {% for m_val, m_lbl in months_list %}
+        <option value="{{ m_val }}" {% if m_val == selected_month %}selected{% endif %}>{{ m_lbl }}</option>
+      {% endfor %}
+    </select>
+
+    <select name="year" class="form-control" style="width: auto; padding: 7px 12px; font-size: 13px;" onchange="this.form.submit()">
+      {% for y_val in years_list %}
+        <option value="{{ y_val }}" {% if y_val == selected_year %}selected{% endif %}>{{ y_val }}</option>
+      {% endfor %}
+    </select>
+  </form>
+</div>
+
+<!-- Core Stat KPI Cards -->
+<div class="stats-grid">
+  <!-- Card 1: All-Time Net Balance -->
+  <div class="stat-card card-balance">
+    <div class="stat-header">
+      <span class="stat-label">Net Balance</span>
+      <div class="stat-icon icon-balance">
+        <svg fill="none" stroke="currentColor" width="20" height="20" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3"/></svg>
+      </div>
+    </div>
+    <div class="stat-value" style="color: {% if all_time_balance < 0 %}var(--danger){% else %}var(--text-main){% endif %};">
+      {{ all_time_balance | currency }}
+    </div>
+    <div class="stat-subtext">
+      <span>● All-time recorded balance</span>
+    </div>
+  </div>
+
+  <!-- Card 2: Selected Month Income -->
+  <div class="stat-card card-income">
+    <div class="stat-header">
+      <span class="stat-label">Monthly Income</span>
+      <div class="stat-icon icon-income">
+        <svg fill="none" stroke="currentColor" width="20" height="20" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 11l5-5m0 0l5 5m-5-5v12"/></svg>
+      </div>
+    </div>
+    <div class="stat-value" style="color: var(--success);">
+      {{ month_income | currency }}
+    </div>
+    <div class="stat-subtext">
+      <span>Inflow for {{ month_name }}</span>
+    </div>
+  </div>
+
+  <!-- Card 3: Selected Month Expense -->
+  <div class="stat-card card-expense">
+    <div class="stat-header">
+      <span class="stat-label">Monthly Expenses</span>
+      <div class="stat-icon icon-expense">
+        <svg fill="none" stroke="currentColor" width="20" height="20" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 13l-5 5m0 0l-5-5m5 5V6"/></svg>
+      </div>
+    </div>
+    <div class="stat-value" style="color: var(--danger);">
+      {{ month_expense | currency }}
+    </div>
+    <div class="stat-subtext">
+      <span>Outflow for {{ month_name }}</span>
+    </div>
+  </div>
+
+  <!-- Card 4: Monthly Savings & Savings Rate -->
+  <div class="stat-card card-savings">
+    <div class="stat-header">
+      <span class="stat-label">Net Savings</span>
+      <div class="stat-icon icon-savings">
+        <svg fill="none" stroke="currentColor" width="20" height="20" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+      </div>
+    </div>
+    <div class="stat-value" style="color: {% if month_savings < 0 %}var(--danger){% else %}var(--secondary){% endif %};">
+      {{ month_savings | currency }}
+    </div>
+    <div class="stat-subtext">
+      <span>Rate: <strong>{{ "%.1f" | format(savings_rate) }}%</strong> of income saved</span>
+    </div>
+  </div>
+</div>
+
+<!-- Charts Section: 6-Month Flow & Category Breakdown -->
+<div class="charts-grid">
+  <!-- Bar Chart: 6-Month Income vs Expenses -->
+  <div class="card">
+    <div class="card-header">
+      <div>
+        <h3 class="card-title">Income vs Expenses (6-Month Trend)</h3>
+        <p class="card-subtitle">Comparison of monthly cash flow</p>
+      </div>
+    </div>
+    <div class="chart-container">
+      <canvas id="trendChart"></canvas>
+    </div>
+  </div>
+
+  <!-- Donut Chart: Expense Breakdown -->
+  <div class="card">
+    <div class="card-header">
+      <div>
+        <h3 class="card-title">Category Spending</h3>
+        <p class="card-subtitle">{{ month_name }} {{ selected_year }} breakdown</p>
+      </div>
+    </div>
+    <div class="chart-container" style="height: 250px;">
+      {% if category_data and category_data | length > 0 %}
+        <canvas id="categoryChart"></canvas>
+      {% else %}
+        <div class="empty-state" style="padding: 30px 10px;">
+          <div class="empty-state-icon" style="width: 44px; height: 44px; margin-bottom: 10px;">
+            <svg fill="none" stroke="currentColor" width="20" height="20" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"/></svg>
+          </div>
+          <div style="font-size: 14px; font-weight: 600; color: var(--text-main);">No Expenses Logged</div>
+          <p style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">Record expenses to see category proportions.</p>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Bottom Section: Recent Transactions & Active Budget Progress -->
+<div style="display: grid; grid-template-columns: 1.3fr 1fr; gap: 24px; margin-bottom: 30px;">
+  <!-- Recent Transactions Table -->
+  <div class="card">
+    <div class="card-header">
+      <div>
+        <h3 class="card-title">Recent Transactions</h3>
+        <p class="card-subtitle">Last 5 financial entries</p>
+      </div>
+      <a href="{{ url_for('transactions.index') }}" class="btn btn-outline btn-sm">View All</a>
+    </div>
+
+    {% if recent_transactions %}
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Category</th>
+              <th>Description</th>
+              <th style="text-align: right;">Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for t in recent_transactions %}
+              <tr>
+                <td style="color: var(--text-muted); font-size: 13px;">{{ t.transaction_date | date_format }}</td>
+                <td>
+                  <span class="badge {% if t.transaction_type == 'income' %}badge-income{% else %}badge-expense{% endif %}">
+                    {{ t.category }}
+                  </span>
+                </td>
+                <td style="max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                  {{ t.description or '—' }}
+                </td>
+                <td style="text-align: right;" class="{% if t.transaction_type == 'income' %}amount-income{% else %}amount-expense{% endif %}">
+                  {% if t.transaction_type == 'income' %}+{% else %}-{% endif %}
+                  {{ t.amount | currency }}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="empty-state">
+        <div class="empty-state-icon">
+          <svg fill="none" stroke="currentColor" width="28" height="28" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+        </div>
+        <div class="empty-state-title">No Transactions Yet</div>
+        <p class="empty-state-text">Start building your financial history by logging your first transaction.</p>
+        <a href="{{ url_for('transactions.create') }}" class="btn btn-primary btn-sm">Add First Transaction</a>
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- Budget Progress Cards -->
+  <div class="card">
+    <div class="card-header">
+      <div>
+        <h3 class="card-title">Budget Tracker</h3>
+        <p class="card-subtitle">{{ month_name }} spending limits</p>
+      </div>
+      <a href="{{ url_for('budgets.index', month=selected_month, year=selected_year) }}" class="btn btn-outline btn-sm">Manage</a>
+    </div>
+
+    {% if budgets_progress %}
+      <div style="display: flex; flex-direction: column; gap: 18px;">
+        {% for item in budgets_progress %}
+          {% set b = item.budget %}
+          {% set m = item.metrics %}
+          <div style="padding-bottom: 12px; border-bottom: 1px solid var(--border-light);">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
+              <span style="font-weight: 600; font-size: 14px;">{{ b.category }}</span>
+              <span class="badge badge-{{ m.status }}">
+                {% if m.status == 'exceeded' %}Over Limit ({{ "%.0f" | format(m.raw_percent) }}%)
+                {% elif m.status == 'warning' %}Warning ({{ "%.0f" | format(m.raw_percent) }}%)
+                {% else %}{{ "%.0f" | format(m.percent_spent) }}%{% endif %}
+              </span>
+            </div>
+
+            <!-- Progress Bar -->
+            <div class="progress-bar-container">
+              <div class="progress-bar-fill progress-{{ m.status }}" style="width: {{ m.percent_spent }}%;"></div>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; font-size: 12px; color: var(--text-muted); margin-top: 4px;">
+              <span>Spent: <strong>{{ m.spent | currency }}</strong></span>
+              <span>Limit: <strong>{{ m.limit | currency }}</strong></span>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="empty-state">
+        <div class="empty-state-icon">
+          <svg fill="none" stroke="currentColor" width="28" height="28" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        </div>
+        <div class="empty-state-title">No Budgets Configured</div>
+        <p class="empty-state-text">Set category spending limits to keep your expenses in check.</p>
+        <a href="{{ url_for('budgets.create', month=selected_month, year=selected_year) }}" class="btn btn-primary btn-sm">Set Monthly Budget</a>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const trendData = {
+      labels: {{ trend_labels | tojson }},
+      income: {{ trend_income | tojson }},
+      expenses: {{ trend_expenses | tojson }}
+    };
+
+    const categoryData = {
+      labels: {{ category_labels | tojson }},
+      values: {{ category_data | tojson }}
+    };
+
+    const currencySymbol = {{ current_user.currency | tojson }};
+
+    initDashboardCharts(trendData, categoryData, currencySymbol);
+  });
+</script>
+{% endblock %}

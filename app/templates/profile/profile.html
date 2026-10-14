@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div style="max-width: 760px; margin: 0 auto;">
+  <!-- Page Header -->
+  <div style="margin-bottom: 24px;">
+    <h2 style="font-size: 22px; font-weight: 800; color: var(--text-main);">Account & Preferences</h2>
+    <p style="color: var(--text-muted); font-size: 13px;">Manage your profile information, password, and currency settings</p>
+  </div>
+
+  <!-- User Overview Card -->
+  <div class="card" style="margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
+    <div style="display: flex; align-items: center; gap: 16px;">
+      <div class="user-avatar" style="width: 54px; height: 54px; font-size: 20px;">
+        {{ current_user.name[:1].upper() }}
+      </div>
+      <div>
+        <h3 style="font-size: 18px; font-weight: 700; color: var(--text-main);">{{ current_user.name }}</h3>
+        <p style="color: var(--text-muted); font-size: 13px;">{{ current_user.email }}</p>
+        <span style="font-size: 12px; color: var(--text-light);">Member since {{ current_user.created_at | date_format }}</span>
+      </div>
+    </div>
+    <div>
+      <a href="{{ url_for('auth.logout') }}" class="btn btn-secondary btn-sm" style="color: var(--danger);">
+        <svg fill="none" stroke="currentColor" width="16" height="16" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+        <span>Sign Out</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- Section 1: Profile & Currency Form -->
+  <div class="card" style="margin-bottom: 24px;">
+    <div class="card-header">
+      <div>
+        <h3 class="card-title">Profile Information & Currency</h3>
+        <p class="card-subtitle">Update your display name and default currency symbol</p>
+      </div>
+    </div>
+
+    <form method="POST" novalidate>
+      {{ profile_form.hidden_tag() }}
+
+      <div class="form-group">
+        <label class="form-label" for="name">Display Name</label>
+        {{ profile_form.name(class="form-control" + (" is-invalid" if profile_form.name.errors else ""), id="name") }}
+        {% for error in profile_form.name.errors %}
+          <div class="form-error"><span>{{ error }}</span></div>
+        {% endfor %}
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Email Address</label>
+        <input type="text" class="form-control" value="{{ current_user.email }}" disabled style="background-color: #f1f5f9; cursor: not-allowed;" title="Email address cannot be changed">
+        <span style="font-size: 12px; color: var(--text-muted); margin-top: 4px; display: block;">Your registered email is tied to account credentials and cannot be edited directly.</span>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="currency">Preferred Currency</label>
+        {{ profile_form.currency(class="form-control" + (" is-invalid" if profile_form.currency.errors else ""), id="currency") }}
+        {% for error in profile_form.currency.errors %}
+          <div class="form-error"><span>{{ error }}</span></div>
+        {% endfor %}
+        <span style="font-size: 12px; color: var(--text-muted); margin-top: 4px; display: block;">All financial amounts across ALTO will be formatted with this currency symbol.</span>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; margin-top: 20px;">
+        <button type="submit" name="submit_profile" value="1" class="btn btn-primary">Save Changes</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Section 2: Security & Change Password -->
+  <div class="card">
+    <div class="card-header">
+      <div>
+        <h3 class="card-title">Security & Password</h3>
+        <p class="card-subtitle">Ensure your account is protected with a strong password</p>
+      </div>
+    </div>
+
+    <form method="POST" novalidate>
+      {{ password_form.hidden_tag() }}
+
+      <div class="form-group">
+        <label class="form-label" for="current_password">Current Password</label>
+        {{ password_form.current_password(class="form-control" + (" is-invalid" if password_form.current_password.errors else ""), id="current_password", placeholder="••••••••") }}
+        {% for error in password_form.current_password.errors %}
+          <div class="form-error"><span>{{ error }}</span></div>
+        {% endfor %}
+      </div>
+
+      <div class="form-row">
+        <div class="form-col form-group">
+          <label class="form-label" for="new_password">New Password</label>
+          {{ password_form.new_password(class="form-control" + (" is-invalid" if password_form.new_password.errors else ""), id="new_password", placeholder="At least 6 characters") }}
+          {% for error in password_form.new_password.errors %}
+            <div class="form-error"><span>{{ error }}</span></div>
+          {% endfor %}
+        </div>
+
+        <div class="form-col form-group">
+          <label class="form-label" for="confirm_new_password">Confirm New Password</label>
+          {{ password_form.confirm_new_password(class="form-control" + (" is-invalid" if password_form.confirm_new_password.errors else ""), id="confirm_new_password", placeholder="Repeat new password") }}
+          {% for error in password_form.confirm_new_password.errors %}
+            <div class="form-error"><span>{{ error }}</span></div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; margin-top: 20px;">
+        <button type="submit" name="submit_password" value="1" class="btn btn-primary">Update Password</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

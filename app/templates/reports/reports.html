@@ -1,0 +1,262 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- Page Header & Action Buttons -->
+<div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 24px;">
+  <div>
+    <h2 style="font-size: 20px; font-weight: 800; color: var(--text-main);">Financial Reports & Analytics</h2>
+    <p style="color: var(--text-muted); font-size: 13px;">In-depth breakdown of your cash flow and category distributions</p>
+  </div>
+
+  <div style="display: flex; align-items: center; gap: 10px;">
+    <!-- Print Button -->
+    <button type="button" class="btn btn-secondary btn-sm" onclick="window.print()">
+      <svg fill="none" stroke="currentColor" width="16" height="16" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+      <span>Print Summary</span>
+    </button>
+
+    <!-- CSV Export Button -->
+    <a href="{{ url_for('reports.export_csv', start_date=start_date, end_date=end_date) }}" class="btn btn-primary btn-sm">
+      <svg fill="none" stroke="currentColor" width="16" height="16" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+      <span>Export CSV</span>
+    </a>
+  </div>
+</div>
+
+<!-- Date Preset & Filter Bar -->
+<div class="card" style="padding: 16px 20px; margin-bottom: 24px;">
+  <form method="GET" action="{{ url_for('reports.index') }}" style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px;">
+    <!-- Preset Buttons -->
+    <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px;">
+      <a href="{{ url_for('reports.index', preset='this_month') }}" class="btn btn-sm {% if preset == 'this_month' %}btn-primary{% else %}btn-outline{% endif %}">This Month</a>
+      <a href="{{ url_for('reports.index', preset='last_month') }}" class="btn btn-sm {% if preset == 'last_month' %}btn-primary{% else %}btn-outline{% endif %}">Last Month</a>
+      <a href="{{ url_for('reports.index', preset='this_year') }}" class="btn btn-sm {% if preset == 'this_year' %}btn-primary{% else %}btn-outline{% endif %}">This Year</a>
+      <a href="{{ url_for('reports.index', preset='all_time') }}" class="btn btn-sm {% if preset == 'all_time' %}btn-primary{% else %}btn-outline{% endif %}">All Time</a>
+    </div>
+
+    <!-- Custom Date Range -->
+    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+      <input type="hidden" name="preset" value="custom">
+      <span style="font-size: 13px; color: var(--text-muted);">Custom Range:</span>
+      <input type="date" name="start_date" value="{{ start_date }}" class="form-control" style="width: auto; padding: 6px 10px; font-size: 13px;">
+      <span style="font-size: 12px; color: var(--text-light);">to</span>
+      <input type="date" name="end_date" value="{{ end_date }}" class="form-control" style="width: auto; padding: 6px 10px; font-size: 13px;">
+      <button type="submit" class="btn btn-secondary btn-sm">Apply</button>
+    </div>
+  </form>
+</div>
+
+<!-- Performance Summary Cards -->
+<div class="stats-grid">
+  <div class="stat-card card-income">
+    <div class="stat-header">
+      <span class="stat-label">Total Inflow</span>
+      <div class="stat-icon icon-income">
+        <svg fill="none" stroke="currentColor" width="20" height="20" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 11l5-5m0 0l5 5m-5-5v12"/></svg>
+      </div>
+    </div>
+    <div class="stat-value" style="color: var(--success);">{{ total_income | currency }}</div>
+    <div class="stat-subtext">{{ transaction_count }} Transactions analyzed</div>
+  </div>
+
+  <div class="stat-card card-expense">
+    <div class="stat-header">
+      <span class="stat-label">Total Outflow</span>
+      <div class="stat-icon icon-expense">
+        <svg fill="none" stroke="currentColor" width="20" height="20" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 13l-5 5m0 0l-5-5m5 5V6"/></svg>
+      </div>
+    </div>
+    <div class="stat-value" style="color: var(--danger);">{{ total_expenses | currency }}</div>
+    <div class="stat-subtext">{{ cat_labels | length }} Expense categories</div>
+  </div>
+
+  <div class="stat-card card-savings">
+    <div class="stat-header">
+      <span class="stat-label">Net Saved</span>
+      <div class="stat-icon icon-savings">
+        <svg fill="none" stroke="currentColor" width="20" height="20" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+      </div>
+    </div>
+    <div class="stat-value" style="color: {% if net_savings < 0 %}var(--danger){% else %}var(--secondary){% endif %};">
+      {{ net_savings | currency }}
+    </div>
+    <div class="stat-subtext">Savings Rate: <strong>{{ "%.1f" | format(savings_rate) }}%</strong></div>
+  </div>
+</div>
+
+<!-- Analytical Charts Grid -->
+<div class="charts-grid" style="grid-template-columns: 1.2fr 1fr; margin-bottom: 28px;">
+  <!-- Expense Category Breakdown Chart -->
+  <div class="card">
+    <div class="card-header">
+      <div>
+        <h3 class="card-title">Expense Allocation by Category</h3>
+        <p class="card-subtitle">Breakdown of spending in this period</p>
+      </div>
+    </div>
+    <div class="chart-container" style="height: 280px;">
+      {% if cat_labels %}
+        <canvas id="reportCategoryChart"></canvas>
+      {% else %}
+        <div class="empty-state">
+          <p class="empty-state-text">No expenses recorded for this period.</p>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Payment Methods Chart -->
+  <div class="card">
+    <div class="card-header">
+      <div>
+        <h3 class="card-title">Payment Channels</h3>
+        <p class="card-subtitle">Volume by payment method</p>
+      </div>
+    </div>
+    <div class="chart-container" style="height: 280px;">
+      {% if payment_labels %}
+        <canvas id="paymentMethodChart"></canvas>
+      {% else %}
+        <div class="empty-state">
+          <p class="empty-state-text">No payment data recorded.</p>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Category Breakdown Table -->
+<div class="card" style="margin-bottom: 28px;">
+  <div class="card-header">
+    <div>
+      <h3 class="card-title">Category Spending Details</h3>
+      <p class="card-subtitle">Exact figures and percentage share</p>
+    </div>
+  </div>
+
+  {% if cat_labels %}
+    <div class="table-responsive">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Category</th>
+            <th>Proportion</th>
+            <th style="text-align: right;">Amount</th>
+            <th style="text-align: right;">Share</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for label, val, pct in category_rows %}
+            <tr>
+              <td style="font-weight: 600;">{{ label }}</td>
+              <td style="width: 35%;">
+                <div class="progress-bar-container" style="margin: 0;">
+                  <div class="progress-bar-fill progress-healthy" style="width: {{ pct }}%;"></div>
+                </div>
+              </td>
+              <td style="text-align: right; font-weight: 700; color: var(--danger);">
+                {{ val | currency }}
+              </td>
+              <td style="text-align: right; color: var(--text-muted); font-size: 13px;">
+                {{ pct }}%
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="empty-state">
+      <p class="empty-state-text">No expense records available for this reporting period.</p>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    Chart.defaults.font.family = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    Chart.defaults.color = '#64748b';
+    const currency = {{ current_user.currency | tojson }};
+
+    // Category Doughnut Chart
+    const catCanvas = document.getElementById('reportCategoryChart');
+    if (catCanvas) {
+      const catLabels = {{ cat_labels | tojson }};
+      const catValues = {{ cat_values | tojson }};
+      const palette = ['#0284c7', '#0d9488', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16', '#f97316', '#6366f1', '#14b8a6', '#64748b'];
+
+      new Chart(catCanvas, {
+        type: 'doughnut',
+        data: {
+          labels: catLabels,
+          datasets: [{
+            data: catValues,
+            backgroundColor: palette.slice(0, catLabels.length),
+            borderWidth: 2,
+            borderColor: '#ffffff'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'bottom' },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  return ` ${context.label}: ${currency} ${context.parsed.toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    // Payment Methods Bar Chart
+    const payCanvas = document.getElementById('paymentMethodChart');
+    if (payCanvas) {
+      const payLabels = {{ payment_labels | tojson }};
+      const payValues = {{ payment_values | tojson }};
+
+      new Chart(payCanvas, {
+        type: 'bar',
+        data: {
+          labels: payLabels,
+          datasets: [{
+            label: 'Amount Spent',
+            data: payValues,
+            backgroundColor: '#0d9488',
+            borderRadius: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  return ` ${currency} ${context.parsed.y.toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
+                }
+              }
+            }
+          },
+          scales: {
+            x: { grid: { display: false } },
+            y: {
+              grid: { color: '#f1f5f9' },
+              ticks: {
+                callback: function(v) { return `${currency} ${v.toLocaleString()}`; }
+              }
+            }
+          }
+        }
+      });
+    }
+  });
+</script>
+{% endblock %}

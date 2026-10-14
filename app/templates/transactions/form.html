@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div style="max-width: 640px; margin: 0 auto;">
+  <div style="margin-bottom: 24px;">
+    <a href="{{ url_for('transactions.index') }}" style="font-size: 13px; color: var(--text-muted); display: inline-flex; align-items: center; gap: 4px;">
+      <svg fill="none" stroke="currentColor" width="16" height="16" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+      <span>Back to Transactions</span>
+    </a>
+    <h2 style="font-size: 24px; font-weight: 800; color: var(--text-main); margin-top: 8px;">
+      {% if is_edit %}Edit Transaction{% else %}Record New Transaction{% endif %}
+    </h2>
+    <p style="color: var(--text-muted); font-size: 14px;">
+      {% if is_edit %}Modify the financial details of this transaction{% else %}Log cash inflows or category expenses to update your balances in real time{% endif %}
+    </p>
+  </div>
+
+  <div class="card">
+    <form method="POST" novalidate>
+      {{ form.hidden_tag() }}
+
+      <!-- Transaction Type (Income vs Expense) -->
+      <div class="form-group">
+        <label class="form-label" for="transaction_type">Transaction Type</label>
+        {{ form.transaction_type(class="form-control" + (" is-invalid" if form.transaction_type.errors else ""), id="transaction_type") }}
+        {% for error in form.transaction_type.errors %}
+          <div class="form-error"><span>{{ error }}</span></div>
+        {% endfor %}
+      </div>
+
+      <!-- Amount & Date (2 columns) -->
+      <div class="form-row">
+        <div class="form-col form-group">
+          <label class="form-label" for="amount">Amount ({{ current_user.currency }})</label>
+          {{ form.amount(class="form-control" + (" is-invalid" if form.amount.errors else ""), id="amount", placeholder="e.g. 1500.00", step="0.01", min="0.01", autofocus=True) }}
+          {% for error in form.amount.errors %}
+            <div class="form-error"><span>{{ error }}</span></div>
+          {% endfor %}
+        </div>
+
+        <div class="form-col form-group">
+          <label class="form-label" for="transaction_date">Date</label>
+          {{ form.transaction_date(class="form-control" + (" is-invalid" if form.transaction_date.errors else ""), id="transaction_date") }}
+          {% for error in form.transaction_date.errors %}
+            <div class="form-error"><span>{{ error }}</span></div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- Category & Payment Method (2 columns) -->
+      <div class="form-row">
+        <div class="form-col form-group">
+          <label class="form-label" for="category">Category</label>
+          {{ form.category(class="form-control" + (" is-invalid" if form.category.errors else ""), id="category", **{'data-selected': form.category.data or (transaction.category if transaction else '')}) }}
+          {% for error in form.category.errors %}
+            <div class="form-error"><span>{{ error }}</span></div>
+          {% endfor %}
+        </div>
+
+        <div class="form-col form-group">
+          <label class="form-label" for="payment_method">Payment Method</label>
+          {{ form.payment_method(class="form-control" + (" is-invalid" if form.payment_method.errors else ""), id="payment_method") }}
+          {% for error in form.payment_method.errors %}
+            <div class="form-error"><span>{{ error }}</span></div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- Description / Notes -->
+      <div class="form-group">
+        <label class="form-label" for="description">Description / Notes (Optional)</label>
+        {{ form.description(class="form-control" + (" is-invalid" if form.description.errors else ""), id="description", placeholder="e.g. Monthly rent payment, client invoice #104") }}
+        {% for error in form.description.errors %}
+          <div class="form-error"><span>{{ error }}</span></div>
+        {% endfor %}
+      </div>
+
+      <div style="display: flex; align-items: center; justify-content: flex-end; gap: 12px; margin-top: 28px; padding-top: 16px; border-top: 1px solid var(--border-color);">
+        <a href="{{ url_for('transactions.index') }}" class="btn btn-secondary">Cancel</a>
+        {{ form.submit(class="btn btn-primary") }}
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

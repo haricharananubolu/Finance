@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+
+{% block public_content %}
+<!-- Landing Page Navigation -->
+<nav class="landing-navbar">
+  <div style="display: flex; align-items: center; gap: 12px;">
+    <div class="brand-icon">▲</div>
+    <span class="brand-name" style="color: var(--text-main);">ALTO</span>
+  </div>
+  <div style="display: flex; align-items: center; gap: 14px;">
+    <a href="{{ url_for('auth.login') }}" class="btn btn-outline btn-sm">Log In</a>
+    <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-sm">Get Started Free</a>
+  </div>
+</nav>
+
+<!-- Hero Section -->
+<section class="hero-section">
+  <div class="hero-badge">
+    <span>✨</span>
+    <span>Modern Personal Finance Tracker</span>
+  </div>
+  
+  <h1 class="hero-title">
+    Take Control of <span>Your Money.</span>
+  </h1>
+  
+  <p class="hero-desc">
+    Track income, manage category expenses, establish monthly budgets, and unlock deep financial insights through an intuitive, clean, and real-time dashboard.
+  </p>
+
+  <div class="hero-ctas">
+    <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-lg">
+      <span>Get Started — It's Free</span>
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+    </a>
+    <a href="{{ url_for('auth.login') }}" class="btn btn-secondary btn-lg">
+      <span>Sign In to ALTO</span>
+    </a>
+  </div>
+</section>
+
+<!-- Dashboard Preview Interactive Card -->
+<div style="max-width: 1040px; margin: 0 auto 70px; padding: 0 24px;">
+  <div class="card" style="padding: 30px; border-radius: var(--radius-xl); box-shadow: var(--shadow-lg); background: #ffffff;">
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; border-bottom: 1px solid var(--border-light); padding-bottom: 16px;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span style="width: 12px; height: 12px; border-radius: 50%; background: #ef4444; display: inline-block;"></span>
+        <span style="width: 12px; height: 12px; border-radius: 50%; background: #f59e0b; display: inline-block;"></span>
+        <span style="width: 12px; height: 12px; border-radius: 50%; background: #10b981; display: inline-block;"></span>
+        <span style="font-size: 13px; font-weight: 600; color: var(--text-muted); margin-left: 8px;">alto.app/dashboard</span>
+      </div>
+      <span class="badge badge-healthy">Live Portfolio Demo</span>
+    </div>
+
+    <!-- Mini Mock Dashboard Grid -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
+      <div style="background: var(--bg-page); padding: 16px; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+        <div style="font-size: 12px; color: var(--text-muted); font-weight: 600;">TOTAL NET BALANCE</div>
+        <div style="font-size: 22px; font-weight: 800; color: var(--primary); margin-top: 4px;">₹ 84,500.00</div>
+        <div style="font-size: 11px; color: var(--success); margin-top: 2px;">↑ All-time records</div>
+      </div>
+      <div style="background: var(--bg-page); padding: 16px; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+        <div style="font-size: 12px; color: var(--text-muted); font-weight: 600;">MONTHLY INCOME</div>
+        <div style="font-size: 22px; font-weight: 800; color: var(--success); margin-top: 4px;">₹ 65,000.00</div>
+        <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Current month</div>
+      </div>
+      <div style="background: var(--bg-page); padding: 16px; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+        <div style="font-size: 12px; color: var(--text-muted); font-weight: 600;">MONTHLY EXPENSES</div>
+        <div style="font-size: 22px; font-weight: 800; color: var(--danger); margin-top: 4px;">₹ 24,800.00</div>
+        <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">5 Categories active</div>
+      </div>
+      <div style="background: var(--bg-page); padding: 16px; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+        <div style="font-size: 12px; color: var(--text-muted); font-weight: 600;">SAVINGS RATE</div>
+        <div style="font-size: 22px; font-weight: 800; color: var(--secondary); margin-top: 4px;">61.8%</div>
+        <div style="font-size: 11px; color: var(--success); margin-top: 2px;">Healthy savings pace</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Features Section -->
+<section style="background: #ffffff; border-top: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color);">
+  <div style="text-align: center; max-width: 600px; margin: 60px auto 0; padding: 0 20px;">
+    <h2 style="font-size: 32px; font-weight: 800; letter-spacing: -0.5px;">Built for Smart Financial Habits</h2>
+    <p style="color: var(--text-muted); margin-top: 8px;">Everything you need to master your personal finances without clutter.</p>
+  </div>
+
+  <div class="feature-grid">
+    <div class="feature-card">
+      <div class="feature-icon icon-income">
+        <svg fill="none" stroke="currentColor" width="24" height="24" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      </div>
+      <h3 style="font-size: 18px; font-weight: 700; margin-bottom: 8px;">Income & Expense Tracking</h3>
+      <p style="color: var(--text-muted); font-size: 14px; line-height: 1.6;">
+        Log cash movements across versatile categories, specify payment methods (Cash, UPI, Cards), and search transactions instantly.
+      </p>
+    </div>
+
+    <div class="feature-card">
+      <div class="feature-icon icon-savings">
+        <svg fill="none" stroke="currentColor" width="24" height="24" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      </div>
+      <h3 style="font-size: 18px; font-weight: 700; margin-bottom: 8px;">Monthly Budget Limits</h3>
+      <p style="color: var(--text-muted); font-size: 14px; line-height: 1.6;">
+        Set monthly category targets. Visual progress meters highlight 80% caution thresholds and trigger overspending alerts.
+      </p>
+    </div>
+
+    <div class="feature-card">
+      <div class="feature-icon icon-balance">
+        <svg fill="none" stroke="currentColor" width="24" height="24" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"/></svg>
+      </div>
+      <h3 style="font-size: 18px; font-weight: 700; margin-bottom: 8px;">Interactive Analytics</h3>
+      <p style="color: var(--text-muted); font-size: 14px; line-height: 1.6;">
+        Chart.js powered graphs display 6-month comparative cash flow bars, expense category donuts, and savings rate trends.
+      </p>
+    </div>
+
+    <div class="feature-card">
+      <div class="feature-icon icon-expense">
+        <svg fill="none" stroke="currentColor" width="24" height="24" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+      </div>
+      <h3 style="font-size: 18px; font-weight: 700; margin-bottom: 8px;">CSV Export & Isolation</h3>
+      <p style="color: var(--text-muted); font-size: 14px; line-height: 1.6;">
+        Download clean CSV reports of your records at any time. Strict per-user isolation ensures complete data privacy and security.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer style="padding: 40px 24px; text-align: center; color: var(--text-muted); font-size: 13px;">
+  <div style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 8px;">
+    <div class="brand-icon" style="width: 24px; height: 24px; font-size: 12px;">▲</div>
+    <strong style="color: var(--text-main); font-size: 15px;">ALTO</strong>
+  </div>
+  <p>Full-Stack Personal Finance Tracker — Capstone Portfolio Project.</p>
+  <p style="margin-top: 6px;">Crafted with Python, Flask, SQLAlchemy, SQLite, and Vanilla JS.</p>
+</footer>
+{% endblock %}

@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- Page Header -->
+<div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 24px;">
+  <div>
+    <h2 style="font-size: 20px; font-weight: 800; color: var(--text-main);">Transaction Records</h2>
+    <p style="color: var(--text-muted); font-size: 13px;">Manage and monitor all inflows and outflows</p>
+  </div>
+  <a href="{{ url_for('transactions.create') }}" class="btn btn-primary">
+    <svg fill="none" stroke="currentColor" width="16" height="16" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
+    <span>Add New Transaction</span>
+  </a>
+</div>
+
+<!-- Filter & Search Toolbar -->
+<form method="GET" action="{{ url_for('transactions.index') }}" class="filter-bar">
+  <div class="filter-group">
+    <!-- Search Query -->
+    <div style="position: relative; min-width: 220px;">
+      <input type="text" name="q" value="{{ search_query }}" placeholder="Search notes or method..." class="form-control" style="padding-left: 36px; font-size: 13px;">
+      <svg style="position: absolute; left: 12px; top: 11px; color: var(--text-light);" fill="none" stroke="currentColor" width="16" height="16" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+    </div>
+
+    <!-- Type Filter -->
+    <select name="type" class="form-control" style="width: auto; font-size: 13px;">
+      <option value="">All Types</option>
+      <option value="income" {% if trans_type == 'income' %}selected{% endif %}>Income (+)</option>
+      <option value="expense" {% if trans_type == 'expense' %}selected{% endif %}>Expense (-)</option>
+    </select>
+
+    <!-- Category Filter -->
+    <select name="category" class="form-control" style="width: auto; font-size: 13px; max-width: 180px;">
+      <option value="">All Categories</option>
+      {% for cat in all_categories %}
+        <option value="{{ cat }}" {% if category == cat %}selected{% endif %}>{{ cat }}</option>
+      {% endfor %}
+    </select>
+
+    <!-- Date Range -->
+    <input type="date" name="start_date" value="{{ start_date }}" class="form-control" style="width: auto; font-size: 13px;" title="Start Date">
+    <span style="color: var(--text-light); font-size: 12px;">to</span>
+    <input type="date" name="end_date" value="{{ end_date }}" class="form-control" style="width: auto; font-size: 13px;" title="End Date">
+
+    <!-- Sorting -->
+    <select name="sort_by" class="form-control" style="width: auto; font-size: 13px;">
+      <option value="date_desc" {% if sort_by == 'date_desc' %}selected{% endif %}>Newest First</option>
+      <option value="date_asc" {% if sort_by == 'date_asc' %}selected{% endif %}>Oldest First</option>
+      <option value="amount_desc" {% if sort_by == 'amount_desc' %}selected{% endif %}>Highest Amount</option>
+      <option value="amount_asc" {% if sort_by == 'amount_asc' %}selected{% endif %}>Lowest Amount</option>
+    </select>
+  </div>
+
+  <div style="display: flex; align-items: center; gap: 8px;">
+    <button type="submit" class="btn btn-secondary btn-sm">Filter</button>
+    {% if search_query or trans_type or category or start_date or end_date or sort_by != 'date_desc' %}
+      <a href="{{ url_for('transactions.index') }}" class="btn btn-outline btn-sm" title="Clear Filters">Reset</a>
+    {% endif %}
+  </div>
+</form>
+
+<!-- Filtered Totals Strip -->
+<div style="display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 20px; font-size: 13px; color: var(--text-muted); background: #ffffff; padding: 12px 20px; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+  <span>Showing <strong>{{ pagination.total }}</strong> records</span>
+  <span>|</span>
+  <span>Filtered Inflow: <strong style="color: var(--success);">{{ filtered_income | currency }}</strong></span>
+  <span>|</span>
+  <span>Filtered Outflow: <strong style="color: var(--danger);">{{ filtered_expense | currency }}</strong></span>
+  <span>|</span>
+  <span>Net: <strong style="color: {% if filtered_net < 0 %}var(--danger){% else %}var(--primary){% endif %};">{{ filtered_net | currency }}</strong></span>
+</div>
+
+<!-- Transactions Table Card -->
+<div class="card" style="padding: 0; overflow: hidden;">
+  {% if transactions %}
+    <div class="table-responsive">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Type</th>
+            <th>Category</th>
+            <th>Payment Method</th>
+            <th>Description</th>
+            <th style="text-align: right;">Amount</th>
+            <th style="text-align: center; width: 120px;">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for t in transactions %}
+            <tr>
+              <td style="color: var(--text-muted); font-size: 13px; white-space: nowrap;">
+                {{ t.transaction_date | date_format }}
+              </td>
+              <td>
+                <span class="badge {% if t.transaction_type == 'income' %}badge-income{% else %}badge-expense{% endif %}">
+                  {{ t.transaction_type | capitalize }}
+                </span>
+              </td>
+              <td style="font-weight: 600; font-size: 14px;">
+                {{ t.category }}
+              </td>
+              <td style="color: var(--text-muted); font-size: 13px;">
+                {{ t.payment_method }}
+              </td>
+              <td style="color: var(--text-main); font-size: 13px; max-width: 250px;">
+                {{ t.description or '—' }}
+              </td>
+              <td style="text-align: right; white-space: nowrap;" class="{% if t.transaction_type == 'income' %}amount-income{% else %}amount-expense{% endif %}">
+                {% if t.transaction_type == 'income' %}+{% else %}-{% endif %}
+                {{ t.amount | currency }}
+              </td>
+              <td style="text-align: center; white-space: nowrap;">
+                <div style="display: flex; align-items: center; justify-content: center; gap: 6px;">
+                  <a href="{{ url_for('transactions.edit', id=t.id) }}" class="btn btn-outline btn-sm" style="padding: 4px 8px;" title="Edit Transaction">
+                    <svg fill="none" stroke="currentColor" width="14" height="14" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                  </a>
+
+                  <!-- Hidden Delete Form for CSRF Protection -->
+                  <form id="deleteForm-{{ t.id }}" method="POST" action="{{ url_for('transactions.delete', id=t.id) }}" style="display: inline;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="button" class="btn btn-outline btn-sm" style="padding: 4px 8px; color: var(--danger); border-color: #fecaca;" title="Delete" onclick="confirmDelete('deleteForm-{{ t.id }}', '{{ t.category }} of {{ t.amount | currency }}')">
+                      <svg fill="none" stroke="currentColor" width="14" height="14" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                    </button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination Controls -->
+    {% if pagination.pages > 1 %}
+      <div class="pagination" style="padding: 16px;">
+        {% if pagination.has_prev %}
+          <a href="{{ url_for('transactions.index', page=pagination.prev_num, q=search_query, type=trans_type, category=category, start_date=start_date, end_date=end_date, sort_by=sort_by) }}" class="page-btn">← Prev</a>
+        {% endif %}
+
+        {% for p in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+          {% if p %}
+            {% if p == pagination.page %}
+              <span class="page-btn active">{{ p }}</span>
+            {% else %}
+              <a href="{{ url_for('transactions.index', page=p, q=search_query, type=trans_type, category=category, start_date=start_date, end_date=end_date, sort_by=sort_by) }}" class="page-btn">{{ p }}</a>
+            {% endif %}
+          {% else %}
+            <span class="page-btn" style="border: none;">...</span>
+          {% endif %}
+        {% endfor %}
+
+        {% if pagination.has_next %}
+          <a href="{{ url_for('transactions.index', page=pagination.next_num, q=search_query, type=trans_type, category=category, start_date=start_date, end_date=end_date, sort_by=sort_by) }}" class="page-btn">Next →</a>
+        {% endif %}
+      </div>
+    {% endif %}
+
+  {% else %}
+    <div class="empty-state">
+      <div class="empty-state-icon">
+        <svg fill="none" stroke="currentColor" width="32" height="32" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+      </div>
+      <div class="empty-state-title">No Matching Transactions</div>
+      <p class="empty-state-text">No records matched your active filter or search criteria. Try modifying your filter terms or create a new entry.</p>
+      <a href="{{ url_for('transactions.create') }}" class="btn btn-primary btn-sm">Create Transaction</a>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

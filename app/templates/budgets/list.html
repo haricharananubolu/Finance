@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- Page Header with Month Selector -->
+<div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 24px;">
+  <div>
+    <h2 style="font-size: 20px; font-weight: 800; color: var(--text-main);">Monthly Budgets</h2>
+    <p style="color: var(--text-muted); font-size: 13px;">Manage category targets for <strong>{{ month_name }} {{ selected_year }}</strong></p>
+  </div>
+
+  <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+    <!-- Month / Year Selector -->
+    <form method="GET" action="{{ url_for('budgets.index') }}" style="display: flex; align-items: center; gap: 8px;">
+      <select name="month" class="form-control" style="width: auto; padding: 7px 12px; font-size: 13px;" onchange="this.form.submit()">
+        {% for m_val, m_lbl in months_list %}
+          <option value="{{ m_val }}" {% if m_val == selected_month %}selected{% endif %}>{{ m_lbl }}</option>
+        {% endfor %}
+      </select>
+
+      <select name="year" class="form-control" style="width: auto; padding: 7px 12px; font-size: 13px;" onchange="this.form.submit()">
+        {% for y_val in years_list %}
+          <option value="{{ y_val }}" {% if y_val == selected_year %}selected{% endif %}>{{ y_val }}</option>
+        {% endfor %}
+      </select>
+    </form>
+
+    <a href="{{ url_for('budgets.create', month=selected_month, year=selected_year) }}" class="btn btn-primary btn-sm">
+      <svg fill="none" stroke="currentColor" width="16" height="16" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
+      <span>Set New Budget</span>
+    </a>
+  </div>
+</div>
+
+<!-- Alert Banners for Budget Warnings -->
+{% if exceeded_count > 0 %}
+  <div class="alert alert-danger" style="margin-bottom: 20px;">
+    <div class="alert-content">
+      <svg fill="none" stroke="currentColor" width="20" height="20" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+      <span><strong>Attention:</strong> You have exceeded your spending limit in <strong>{{ exceeded_count }}</strong> budget categor{{ 'y' if exceeded_count == 1 else 'ies' }} this month!</span>
+    </div>
+    <button type="button" class="alert-close">&times;</button>
+  </div>
+{% elif warning_count > 0 %}
+  <div class="alert alert-warning" style="margin-bottom: 20px;">
+    <div class="alert-content">
+      <svg fill="none" stroke="currentColor" width="20" height="20" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      <span><strong>Spending Warning:</strong> <strong>{{ warning_count }}</strong> categor{{ 'y has' if warning_count == 1 else 'ies have' }} reached over 80% of their monthly limit.</span>
+    </div>
+    <button type="button" class="alert-close">&times;</button>
+  </div>
+{% endif %}
+
+<!-- Overall Month Budget Summary Card -->
+<div class="card" style="margin-bottom: 28px;">
+  <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 16px;">
+    <div>
+      <h3 class="card-title">Overall Monthly Limit Summary</h3>
+      <p class="card-subtitle">Combined view of all {{ month_name }} budgets</p>
+    </div>
+    <div style="font-size: 14px; font-weight: 700; color: {% if total_remaining < 0 %}var(--danger){% else %}var(--primary){% endif %};">
+      {% if total_remaining >= 0 %}
+        {{ total_remaining | currency }} Remaining
+      {% else %}
+        Overspent by {{ (total_remaining * -1) | currency }}
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Big Progress Bar -->
+  <div class="progress-bar-container" style="height: 12px;">
+    <div class="progress-bar-fill {% if raw_overall_percentage > 100 %}progress-exceeded{% elif raw_overall_percentage >= 80 %}progress-warning{% else %}progress-healthy{% endif %}" style="width: {{ overall_percentage }}%;"></div>
+  </div>
+
+  <div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 16px; margin-top: 14px; font-size: 13px; color: var(--text-muted);">
+    <span>Total Budgeted: <strong style="color: var(--text-main);">{{ total_budgeted | currency }}</strong></span>
+    <span>Total Spent: <strong style="color: var(--danger);">{{ total_spent | currency }}</strong></span>
+    <span>Usage: <strong>{{ "%.1f" | format(raw_overall_percentage) }}%</strong></span>
+  </div>
+</div>
+
+<!-- Category Budget Cards Grid -->
+{% if budget_items %}
+  <div class="budgets-grid">
+    {% for item in budget_items %}
+      {% set b = item.budget %}
+      {% set m = item.metrics %}
+      <div class="budget-card">
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <h4 style="font-size: 16px; font-weight: 700; color: var(--text-main);">{{ b.category }}</h4>
+          <span class="badge badge-{{ m.status }}">
+            {% if m.status == 'exceeded' %}Exceeded ({{ "%.0f" | format(m.raw_percent) }}%)
+            {% elif m.status == 'warning' %}Caution ({{ "%.0f" | format(m.raw_percent) }}%)
+            {% else %}{{ "%.0f" | format(m.percent_spent) }}%{% endif %}
+          </span>
+        </div>
+
+        <!-- Metric Details -->
+        <div style="display: flex; justify-content: space-between; align-items: baseline; margin-top: 4px;">
+          <div>
+            <span style="font-size: 22px; font-weight: 800; color: var(--text-main);">{{ m.spent | currency }}</span>
+            <span style="font-size: 13px; color: var(--text-muted);"> / {{ m.limit | currency }}</span>
+          </div>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="progress-bar-container">
+          <div class="progress-bar-fill progress-{{ m.status }}" style="width: {{ m.percent_spent }}%;"></div>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px;">
+          <span style="color: {% if m.remaining < 0 %}var(--danger){% else %}var(--text-muted){% endif %}; font-weight: 600;">
+            {% if m.remaining >= 0 %}
+              {{ m.remaining | currency }} Left
+            {% else %}
+              Over by {{ (m.remaining * -1) | currency }}
+            {% endif %}
+          </span>
+        </div>
+
+        <!-- Actions -->
+        <div style="display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-top: 10px; padding-top: 12px; border-top: 1px solid var(--border-light);">
+          <a href="{{ url_for('budgets.edit', id=b.id) }}" class="btn btn-outline btn-sm" style="padding: 4px 10px;">Edit</a>
+          
+          <form id="deleteBudgetForm-{{ b.id }}" method="POST" action="{{ url_for('budgets.delete', id=b.id) }}" style="display: inline;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="button" class="btn btn-outline btn-sm" style="padding: 4px 10px; color: var(--danger); border-color: #fecaca;" onclick="confirmDelete('deleteBudgetForm-{{ b.id }}', '{{ b.category }} budget')">
+              Delete
+            </button>
+          </form>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+{% else %}
+  <div class="empty-state">
+    <div class="empty-state-icon">
+      <svg fill="none" stroke="currentColor" width="32" height="32" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+    </div>
+    <div class="empty-state-title">No Budgets Set for {{ month_name }} {{ selected_year }}</div>
+    <p class="empty-state-text">Setting category budgets is the best way to avoid overspending and hit your savings targets.</p>
+    <a href="{{ url_for('budgets.create', month=selected_month, year=selected_year) }}" class="btn btn-primary btn-sm">Set Your First Budget</a>
+  </div>
+{% endif %}
+{% endblock %}

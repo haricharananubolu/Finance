@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div style="max-width: 580px; margin: 0 auto;">
+  <div style="margin-bottom: 24px;">
+    <a href="{{ url_for('budgets.index') }}" style="font-size: 13px; color: var(--text-muted); display: inline-flex; align-items: center; gap: 4px;">
+      <svg fill="none" stroke="currentColor" width="16" height="16" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+      <span>Back to Budgets</span>
+    </a>
+    <h2 style="font-size: 24px; font-weight: 800; color: var(--text-main); margin-top: 8px;">
+      {% if is_edit %}Edit Budget Limit{% else %}Create Monthly Budget{% endif %}
+    </h2>
+    <p style="color: var(--text-muted); font-size: 14px;">
+      Define a monthly spending cap for a specific expense category.
+    </p>
+  </div>
+
+  <div class="card">
+    <form method="POST" novalidate>
+      {{ form.hidden_tag() }}
+
+      <div class="form-group">
+        <label class="form-label" for="category">Expense Category</label>
+        {{ form.category(class="form-control" + (" is-invalid" if form.category.errors else ""), id="category") }}
+        {% for error in form.category.errors %}
+          <div class="form-error"><span>{{ error }}</span></div>
+        {% endfor %}
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="monthly_limit">Monthly Limit ({{ current_user.currency }})</label>
+        {{ form.monthly_limit(class="form-control" + (" is-invalid" if form.monthly_limit.errors else ""), id="monthly_limit", placeholder="e.g. 5000.00", step="0.01", min="1.00", autofocus=True) }}
+        {% for error in form.monthly_limit.errors %}
+          <div class="form-error"><span>{{ error }}</span></div>
+        {% endfor %}
+      </div>
+
+      <div class="form-row">
+        <div class="form-col form-group">
+          <label class="form-label" for="month">Target Month</label>
+          {{ form.month(class="form-control" + (" is-invalid" if form.month.errors else ""), id="month") }}
+          {% for error in form.month.errors %}
+            <div class="form-error"><span>{{ error }}</span></div>
+          {% endfor %}
+        </div>
+
+        <div class="form-col form-group">
+          <label class="form-label" for="year">Year</label>
+          {{ form.year(class="form-control" + (" is-invalid" if form.year.errors else ""), id="year") }}
+          {% for error in form.year.errors %}
+            <div class="form-error"><span>{{ error }}</span></div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div style="display: flex; align-items: center; justify-content: flex-end; gap: 12px; margin-top: 28px; padding-top: 16px; border-top: 1px solid var(--border-color);">
+        <a href="{{ url_for('budgets.index') }}" class="btn btn-secondary">Cancel</a>
+        {{ form.submit(class="btn btn-primary") }}
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
