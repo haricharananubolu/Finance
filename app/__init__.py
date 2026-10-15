@@ -3,6 +3,7 @@ Application factory for ALTO.
 Initializes the Flask application, registers blueprints, database extensions,
 custom Jinja filters, context processors, and global error handlers.
 """
+import os
 from datetime import datetime, date
 from decimal import Decimal
 from pathlib import Path
@@ -108,3 +109,7 @@ def create_app(config_name='development'):
         db.create_all()
 
     return app
+
+
+# Expose default WSGI callable so `gunicorn app:app` succeeds automatically
+app = create_app(os.environ.get('FLASK_ENV', 'production'))
